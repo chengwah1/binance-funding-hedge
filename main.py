@@ -185,16 +185,16 @@ def main():
             return
 
         # Execute hedge orders
-        # hedged_orders = bot.hedge_positions(adjust)
-        # bot.logger.info(f"Hedged orders: {hedged_orders}")
+        hedged_orders = bot.hedge_positions(adjust)
+        bot.logger.info(f"Hedged orders: {hedged_orders}")
 
         # Wait for 60 seconds before unwinding the orders
         bot.logger.info("Waiting for 60 seconds before unwinding...")
         time.sleep(60)
 
         # Execute unwind orders (ensure that hedged_orders contain the required fields like 'origQty')
-        # unwind_orders = bot.unwind_positions(hedged_orders)
-        # bot.logger.info(f"Unwound orders: {unwind_orders}")
+        unwind_orders = bot.unwind_positions(hedged_orders)
+        bot.logger.info(f"Unwound orders: {unwind_orders}")
 
     except Exception as e:
         bot.logger.exception(f"An error occurred: {e}")
