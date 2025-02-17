@@ -6,8 +6,7 @@ import hashlib
 import hmac
 import time
 import requests
-from dotenv import load_dotenv
-
+import keyring
 
 class BinanceBot:
     """
@@ -15,15 +14,13 @@ class BinanceBot:
     """
 
     def __init__(self, api_key=None, api_secret=None, base_url=None):
-        load_dotenv()  # Load environment variables
-        self.api_key = api_key or os.environ.get("BINANCE_API_KEY")
-        self.api_secret = api_secret or os.environ.get("BINANCE_API_SECRET")
+        self.api_key = api_key or keyring.get_password("binance-api-key", "BINANCE_API_KEY")
+        self.api_secret = api_secret or keyring.get_password("binance-api-secret", "BINANCE_API_SECRET")
         self.base_url = base_url or os.environ.get("BINANCE_BASE_URL", "https://fapi.binance.com")
 
         # Validate required properties
         if not self.api_key or not self.api_secret:
             raise ValueError("API Key and Secret must be provided.")
-        
         # Configure logging
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(
@@ -167,17 +164,22 @@ def main():
         if not positions:
             bot.logger.warning("No open positions found.")
             return
-
+        current_timestamp_ms = int(time.time() * 1000)
+        bot.logger.info(f"Current timestamp: {current_timestamp_ms}")
         adjust = []
         for position in positions:
             symbol = position["symbol"]
             side = position["positionSide"]
             funding = bot.get_funding_rate(symbol)
+            if (abs(funding["nextFundingTime"] - current_timestamp_ms)) > 120000: # funding not in next 2 minutes
+                continue
             # Check funding rate conditions to decide if hedging is needed
             if side == "LONG" and float(funding.get("lastFundingRate", 0)) > 0.0005:
                 adjust.append(position)
+                bot.logger.info(f"Funding rate for {symbol} is high: {funding.get('lastFundingRate', 0)}")
             elif side == "SHORT" and float(funding.get("lastFundingRate", 0)) < -0.0005:
                 adjust.append(position)
+                bot.logger.info(f"Funding rate for {symbol} is high: {funding.get('lastFundingRate', 0)}")
 
         bot.logger.info(f"Positions requiring hedging: {adjust}")
         if not adjust:
@@ -188,11 +190,11 @@ def main():
         hedged_orders = bot.hedge_positions(adjust)
         bot.logger.info(f"Hedged orders: {hedged_orders}")
 
-        # Wait for 60 seconds before unwinding the orders
+        # # Wait for 60 seconds before unwinding the orders
         bot.logger.info("Waiting for 60 seconds before unwinding...")
         time.sleep(60)
 
-        # Execute unwind orders (ensure that hedged_orders contain the required fields like 'origQty')
+        # # Execute unwind orders (ensure that hedged_orders contain the required fields like 'origQty')
         unwind_orders = bot.unwind_positions(hedged_orders)
         bot.logger.info(f"Unwound orders: {unwind_orders}")
 
