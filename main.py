@@ -170,8 +170,8 @@ def main():
             symbol = position["symbol"]
             side = position["positionSide"]
             funding = bot.get_funding_rate(symbol)
-            # if (abs(funding["nextFundingTime"] - current_timestamp_ms)) > 120000: # funding not in next 2 minutes
-            #     continue
+            if (abs(funding["nextFundingTime"] - current_timestamp_ms)) > 120000: # funding not in next 2 minutes
+                continue
             # Check funding rate conditions to decide if hedging is needed
             if side == "LONG" and float(funding.get("lastFundingRate", 0)) > 0.0005:
                 adjust.append(position)
