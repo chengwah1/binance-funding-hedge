@@ -14,8 +14,8 @@ class BinanceBot:
     """
 
     def __init__(self, api_key=None, api_secret=None, base_url=None):
-        self.api_key = api_key or keyring.get_password("binance-api-key", "BINANCE_API_KEY")
-        self.api_secret = api_secret or keyring.get_password("binance-api-secret", "BINANCE_API_SECRET")
+        self.api_key = api_key or keyring.get_password("BINANCE_API_KEY", "BINANCE_API_KEY")
+        self.api_secret = api_secret or keyring.get_password("BINANCE_API_SECRET", "BINANCE_API_SECRET")
         self.base_url = base_url or os.environ.get("BINANCE_BASE_URL", "https://fapi.binance.com")
 
         # Validate required properties
